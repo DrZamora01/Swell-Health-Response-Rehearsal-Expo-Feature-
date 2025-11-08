@@ -96,3 +96,14 @@ export async function getSkillStats(): Promise<Record<string, number>> {
   }
 }
 
+export async function deletePlaybookItem(id: string): Promise<void> {
+  try {
+    const items = await loadPlaybook();
+    const filtered = items.filter(item => item.id !== id);
+    await AsyncStorage.setItem(KEY_PLAYBOOK, JSON.stringify(filtered));
+  } catch (error) {
+    console.error('Error deleting playbook item:', error);
+    throw error;
+  }
+}
+
