@@ -98,11 +98,38 @@ export async function getSkillStats(): Promise<Record<string, number>> {
 
 export async function deletePlaybookItem(id: string): Promise<void> {
   try {
-    const items = await loadPlaybook();
-    const filtered = items.filter(item => item.id !== id);
+    console.log('=== STORAGE DELETE ===');
+    console.log('Looking for item with ID:', id);
+    
+    const raw = await AsyncStorage.getItem(KEY_PLAYBOOK) || '[]';
+    const items = JSON.parse(raw) as PlaybookItem[];
+    console.log('Current items in storage:', items.length);
+    console.log('Item IDs:', items.map(i => i.id));
+    
+    const beforeCount = items.length;
+    const filtered = items.filter(item => {
+      const matches = item.id !== id;
+      if (!matches) {
+        console.log('Found item to delete:', item.id, 'matches', id);
+      }
+      return matches;
+    });
+    const afterCount = filtered.length;
+    
+    console.log(`Before: ${beforeCount}, After: ${afterCount}`);
+    
+    if (beforeCount === afterCount) {
+      console.warn(`Item with id ${id} not found in playbook`);
+      // Don't throw error, just log it - maybe item was already deleted
+      console.log('Item not found, but continuing...');
+    }
+    
+    // Always save the filtered array
     await AsyncStorage.setItem(KEY_PLAYBOOK, JSON.stringify(filtered));
+    console.log('✓ Storage updated successfully');
+    console.log('=== STORAGE DELETE COMPLETE ===');
   } catch (error) {
-    console.error('Error deleting playbook item:', error);
+    console.error('=== STORAGE DELETE ERROR ===', error);
     throw error;
   }
 }

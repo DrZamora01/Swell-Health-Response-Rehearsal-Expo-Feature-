@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { useState, useCallback, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Alert, Animated, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Swipeable } from 'react-native-gesture-handler';
 import Header from '../components/Header';
 import { theme } from '../theme';
 import { loadPlaybook, PlaybookItem, deletePlaybookItem } from '../storage';
@@ -9,6 +10,8 @@ import { SKILLS } from '../data/skills';
 
 export default function PlaybookScreen({ navigation }: any){
   const [items, setItems] = useState<PlaybookItem[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
   
   const loadData = useCallback(async () => {
     try {
@@ -48,27 +51,77 @@ export default function PlaybookScreen({ navigation }: any){
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const handleDelete = (item: PlaybookItem) => {
-    Alert.alert(
-      'Delete Response',
-      'Are you sure you want to delete this saved response?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deletePlaybookItem(item.id);
-              // Reload the list immediately
-              await loadData();
-            } catch (error) {
-              console.error('Error deleting item:', error);
-              Alert.alert('Error', 'Failed to delete item. Please try again.');
-            }
-          }
-        }
-      ]
+  const handleDelete = (item: PlaybookItem, skipConfirm = false) => {
+    // Close any open swipeable
+    const swipeable = swipeableRefs.current.get(item.id);
+    if (swipeable) {
+      swipeable.close();
+    }
+
+    // Delete immediately - no confirmation needed
+    performDelete(item);
+  };
+
+  const performDelete = async (item: PlaybookItem) => {
+    try {
+      setDeletingId(item.id);
+      console.log('=== DELETING ITEM ===');
+      console.log('Item ID:', item.id);
+      console.log('Item:', JSON.stringify(item, null, 2));
+      
+      // Delete from storage
+      await deletePlaybookItem(item.id);
+      console.log('✓ Item deleted from storage');
+      
+      // Immediately update state by filtering out the deleted item
+      setItems(prevItems => {
+        const filtered = prevItems.filter(i => i.id !== item.id);
+        console.log(`State updated: ${prevItems.length} -> ${filtered.length} items`);
+        return filtered;
+      });
+      
+      // Also reload from storage to ensure consistency
+      const updated = await loadPlaybook();
+      console.log('Reloaded from storage:', updated.length, 'items');
+      setItems(updated);
+      
+      setDeletingId(null);
+      console.log('=== DELETE COMPLETE ===');
+    } catch (error: any) {
+      console.error('=== DELETE ERROR ===', error);
+      setDeletingId(null);
+      
+      // Try to reload anyway
+      const updated = await loadPlaybook();
+      setItems(updated);
+      
+      Alert.alert('Error', `Failed to delete: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  const renderRightActions = (item: PlaybookItem, dragX: Animated.AnimatedInterpolation) => {
+    const scale = dragX.interpolate({
+      inputRange: [-100, 0],
+      outputRange: [1, 0],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <TouchableOpacity
+        onPress={() => handleDelete(item, true)}
+        style={{
+          backgroundColor: theme.danger,
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          paddingHorizontal: 20,
+          borderRadius: 16,
+          marginVertical: 8,
+        }}
+      >
+        <Animated.View style={{ transform: [{ scale }] }}>
+          <Text style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>Delete</Text>
+        </Animated.View>
+      </TouchableOpacity>
     );
   };
 
@@ -119,55 +172,85 @@ export default function PlaybookScreen({ navigation }: any){
               </Text>
             </View>
           }
-          renderItem={({ item }) => (
-            <Card>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={{ fontSize: 24, marginRight: 8 }}>{getSkillEmoji(item.skill)}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.accent, fontSize: 12, fontWeight: '600', marginBottom: 2 }}>
-                    {getSkillName(item.skill)}
-                  </Text>
-                  <Text style={{ color: theme.subtext, fontSize: 11 }}>
-                    {formatDate(item.createdAt)}
+          renderItem={({ item }) => {
+            const isDeleting = deletingId === item.id;
+            
+            return (
+              <Swipeable
+                ref={(ref) => {
+                  if (ref) {
+                    swipeableRefs.current.set(item.id, ref);
+                  } else {
+                    swipeableRefs.current.delete(item.id);
+                  }
+                }}
+                renderRightActions={(progress, dragX) => renderRightActions(item, dragX)}
+                rightThreshold={40}
+              >
+                <Card>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <Text style={{ fontSize: 24, marginRight: 8 }}>{getSkillEmoji(item.skill)}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: theme.accent, fontSize: 12, fontWeight: '600', marginBottom: 2 }}>
+                        {getSkillName(item.skill)}
+                      </Text>
+                      <Text style={{ color: theme.subtext, fontSize: 11 }}>
+                        {formatDate(item.createdAt)}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleDelete(item)}
+                      disabled={isDeleting}
+                      style={{
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        borderRadius: 8,
+                        backgroundColor: isDeleting ? theme.surface : theme.danger + '20',
+                        borderWidth: 1,
+                        borderColor: isDeleting ? theme.surface : theme.danger + '60',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        opacity: isDeleting ? 0.6 : 1
+                      }}
+                    >
+                      {isDeleting ? (
+                        <ActivityIndicator size="small" color={theme.danger} />
+                      ) : (
+                        <>
+                          <Text style={{ fontSize: 14, marginRight: 6 }}>🗑️</Text>
+                          <Text style={{ color: theme.danger, fontSize: 12, fontWeight: '600' }}>Delete</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                
+                <View style={{ 
+                  backgroundColor: theme.surface, 
+                  borderRadius: 12, 
+                  padding: 14, 
+                  marginBottom: 12,
+                  borderLeftWidth: 3,
+                  borderLeftColor: theme.accent
+                }}>
+                  <Text style={{ color: theme.text, fontSize: 15, lineHeight: 22, fontWeight: '500' }}>
+                    {item.rewrite}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  onPress={() => handleDelete(item)}
-                  style={{
-                    padding: 8,
-                    borderRadius: 8,
-                    backgroundColor: theme.danger + '20'
-                  }}
-                >
-                  <Text style={{ fontSize: 18 }}>🗑️</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <View style={{ 
-                backgroundColor: theme.surface, 
-                borderRadius: 12, 
-                padding: 14, 
-                marginBottom: 12,
-                borderLeftWidth: 3,
-                borderLeftColor: theme.accent
-              }}>
-                <Text style={{ color: theme.text, fontSize: 15, lineHeight: 22, fontWeight: '500' }}>
-                  {item.rewrite}
-                </Text>
-              </View>
-              
-              <View style={{ 
-                backgroundColor: theme.bg, 
-                borderRadius: 8, 
-                padding: 10 
-              }}>
-                <Text style={{ color: theme.subtext, fontSize: 11, marginBottom: 4 }}>Original:</Text>
-                <Text style={{ color: theme.subtext, fontSize: 13, lineHeight: 18 }}>
-                  {item.original}
-                </Text>
-              </View>
-            </Card>
-          )}
+                
+                <View style={{ 
+                  backgroundColor: theme.bg, 
+                  borderRadius: 8, 
+                  padding: 10 
+                }}>
+                  <Text style={{ color: theme.subtext, fontSize: 11, marginBottom: 4 }}>Original:</Text>
+                  <Text style={{ color: theme.subtext, fontSize: 13, lineHeight: 18 }}>
+                    {item.original}
+                  </Text>
+                </View>
+              </Card>
+            </Swipeable>
+            );
+          }}
         />
       )}
     </View>
