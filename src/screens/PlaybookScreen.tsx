@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
 import { theme } from '../theme';
-import { loadPlaybook, PlaybookItem } from '../storage';
+import { loadPlaybook, PlaybookItem, deletePlaybookItem } from '../storage';
 import Card from '../components/Card';
 import { SKILLS } from '../data/skills';
 
@@ -45,6 +45,30 @@ export default function PlaybookScreen({ navigation }: any){
     if (days === 1) return 'Yesterday';
     if (days < 7) return `${days} days ago`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const handleDelete = (item: PlaybookItem) => {
+    Alert.alert(
+      'Delete Response',
+      'Are you sure you want to delete this saved response?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePlaybookItem(item.id);
+              const updated = await loadPlaybook();
+              setItems(updated);
+            } catch (error) {
+              console.error('Error deleting item:', error);
+              Alert.alert('Error', 'Failed to delete item. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -106,6 +130,16 @@ export default function PlaybookScreen({ navigation }: any){
                     {formatDate(item.createdAt)}
                   </Text>
                 </View>
+                <TouchableOpacity
+                  onPress={() => handleDelete(item)}
+                  style={{
+                    padding: 8,
+                    borderRadius: 8,
+                    backgroundColor: theme.danger + '20'
+                  }}
+                >
+                  <Text style={{ fontSize: 18 }}>🗑️</Text>
+                </TouchableOpacity>
               </View>
               
               <View style={{ 

@@ -6,6 +6,7 @@ import { useState, useCallback } from 'react';
 import { getStreak, loadPlaybook, getLastPlaybookItem, getSkillStats } from '../storage';
 import { SKILLS } from '../data/skills';
 import { useFocusEffect } from '@react-navigation/native';
+import Mascot from '../components/Mascot';
 
 export default function HomeScreen({ navigation }: any){
   const [streak, setStreak] = useState(0);
@@ -49,6 +50,11 @@ export default function HomeScreen({ navigation }: any){
     <ScrollView style={{ flex: 1, backgroundColor: theme.bg }}>
       <Header title="Coach" />
       <View style={{ padding: 16 }}>
+        {/* Mascot Card */}
+        <Card>
+          <Mascot streak={streak} playbookCount={playbookCount} />
+        </Card>
+
         {/* Streak Card */}
         <Card>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
