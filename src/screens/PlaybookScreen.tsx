@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
 import { theme } from '../theme';
 import { loadPlaybook, PlaybookItem } from '../storage';
@@ -9,12 +10,20 @@ import { SKILLS } from '../data/skills';
 export default function PlaybookScreen({ navigation }: any){
   const [items, setItems] = useState<PlaybookItem[]>([]);
   
-  useEffect(() => { 
-    const load = async () => setItems(await loadPlaybook());
-    load();
-    const unsub = setInterval(load, 1000);
-    return () => clearInterval(unsub);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const load = async () => {
+        try {
+          const data = await loadPlaybook();
+          setItems(data);
+        } catch (error) {
+          console.error('Error loading playbook:', error);
+          setItems([]);
+        }
+      };
+      load();
+    }, [])
+  );
 
   const getSkillEmoji = (key: string) => {
     if (key === 'i_statement') return '💭';

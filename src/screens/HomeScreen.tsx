@@ -10,10 +10,19 @@ export default function HomeScreen({ navigation }: any){
   const [playbookCount, setPlaybookCount] = useState(0);
   
   useEffect(() => { 
-    (async () => {
-      setStreak((await getStreak()).count);
-      setPlaybookCount((await loadPlaybook()).length);
-    })(); 
+    const load = async () => {
+      try {
+        const streakData = await getStreak();
+        setStreak(streakData.count);
+        const playbook = await loadPlaybook();
+        setPlaybookCount(playbook.length);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setStreak(0);
+        setPlaybookCount(0);
+      }
+    };
+    load();
   }, []);
 
   const getStreakMessage = () => {
