@@ -12,17 +12,8 @@ export default function PlaybookScreen({ navigation }: any){
   
   useFocusEffect(
     useCallback(() => {
-      const load = async () => {
-        try {
-          const data = await loadPlaybook();
-          setItems(data);
-        } catch (error) {
-          console.error('Error loading playbook:', error);
-          setItems([]);
-        }
-      };
-      load();
-    }, [])
+      loadData();
+    }, [loadData])
   );
 
   const getSkillEmoji = (key: string) => {
@@ -59,6 +50,7 @@ export default function PlaybookScreen({ navigation }: any){
           onPress: async () => {
             try {
               await deletePlaybookItem(item.id);
+              // Reload the list immediately
               const updated = await loadPlaybook();
               setItems(updated);
             } catch (error) {
@@ -70,6 +62,16 @@ export default function PlaybookScreen({ navigation }: any){
       ]
     );
   };
+
+  const loadData = useCallback(async () => {
+    try {
+      const data = await loadPlaybook();
+      setItems(data);
+    } catch (error) {
+      console.error('Error loading playbook:', error);
+      setItems([]);
+    }
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
