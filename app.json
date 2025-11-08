@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Swell Coach",
+    "slug": "swell-response-rehearsal",
+    "scheme": "swellcoach",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0E1114"
+    },
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "foregroundImage": "./assets/icon.png", "backgroundColor": "#0E1114" } },
+    "web": { "bundler": "metro" }
+  }
+}
+
