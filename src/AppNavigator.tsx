@@ -27,14 +27,67 @@ function CoachStack() {
 export default function AppNavigator(){
   const navTheme = {
     ...DefaultTheme,
-    colors: { ...DefaultTheme.colors, background: theme.bg, text: theme.text, card: theme.surface, primary: theme.accent }
+    colors: { 
+      ...DefaultTheme.colors, 
+      background: theme.bg, 
+      text: theme.text, 
+      card: theme.surface, 
+      primary: theme.accent,
+      border: theme.card,
+      notification: theme.accent
+    }
   };
   return (
     <NavigationContainer theme={navTheme}>
-      <Tab.Navigator screenOptions={{ headerShown: false }}>
-        <Tab.Screen name="Coach" component={CoachStack} />
-        <Tab.Screen name="Playbook" component={PlaybookScreen} />
-        <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Navigator 
+        screenOptions={{ 
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: theme.surface,
+            borderTopColor: theme.card,
+            borderTopWidth: 1,
+            paddingTop: 8,
+            paddingBottom: 8,
+            height: 60
+          },
+          tabBarActiveTintColor: theme.accent,
+          tabBarInactiveTintColor: theme.subtext,
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: '600'
+          }
+        }}
+      >
+        <Tab.Screen 
+          name="Coach" 
+          component={CoachStack}
+          options={{
+            tabBarLabel: 'Coach',
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>💬</Text>
+            )
+          }}
+        />
+        <Tab.Screen 
+          name="Playbook" 
+          component={PlaybookScreen}
+          options={{
+            tabBarLabel: 'Playbook',
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>📚</Text>
+            )
+          }}
+        />
+        <Tab.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{
+            tabBarLabel: 'Settings',
+            tabBarIcon: ({ color, size }) => (
+              <Text style={{ fontSize: size, color }}>⚙️</Text>
+            )
+          }}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
