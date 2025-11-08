@@ -5,9 +5,16 @@
     "jsx": "react-jsx",
     "strict": true,
     "baseUrl": ".",
-    "paths": { "*": ["./src/*"] },
-    "types": ["react", "react-native"],
+    "paths": {
+      "*": [
+        "./src/*"
+      ]
+    },
+    "types": [
+      "react",
+      "react-native"
+    ],
     "skipLibCheck": true
-  }
+  },
+  "extends": "expo/tsconfig.base"
 }
-
