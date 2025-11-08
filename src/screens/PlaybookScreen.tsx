@@ -10,6 +10,16 @@ import { SKILLS } from '../data/skills';
 export default function PlaybookScreen({ navigation }: any){
   const [items, setItems] = useState<PlaybookItem[]>([]);
   
+  const loadData = useCallback(async () => {
+    try {
+      const data = await loadPlaybook();
+      setItems(data);
+    } catch (error) {
+      console.error('Error loading playbook:', error);
+      setItems([]);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -51,8 +61,7 @@ export default function PlaybookScreen({ navigation }: any){
             try {
               await deletePlaybookItem(item.id);
               // Reload the list immediately
-              const updated = await loadPlaybook();
-              setItems(updated);
+              await loadData();
             } catch (error) {
               console.error('Error deleting item:', error);
               Alert.alert('Error', 'Failed to delete item. Please try again.');
@@ -62,16 +71,6 @@ export default function PlaybookScreen({ navigation }: any){
       ]
     );
   };
-
-  const loadData = useCallback(async () => {
-    try {
-      const data = await loadPlaybook();
-      setItems(data);
-    } catch (error) {
-      console.error('Error loading playbook:', error);
-      setItems([]);
-    }
-  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
