@@ -80,7 +80,7 @@ export default function ComposeScreen({ navigation, route }: any){
               }}
               disabled={input.trim().length === 0}
               style={{ 
-                backgroundColor: input.trim().length > 0 ? theme.accent : theme.surface,
+                backgroundColor: input.trim().length > 0 ? theme.secondary : theme.surface,
                 padding: 16, 
                 borderRadius: 12, 
                 marginTop: 16,

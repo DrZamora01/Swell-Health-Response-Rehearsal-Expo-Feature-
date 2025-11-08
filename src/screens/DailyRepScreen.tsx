@@ -56,10 +56,10 @@ export default function DailyRepScreen({ navigation }: any){
           <TouchableOpacity 
             onPress={() => navigation.navigate('Compose', { skill })} 
             style={{ 
-              backgroundColor: theme.accent, 
+              backgroundColor: theme.secondary, 
               padding: 16, 
               borderRadius: 12,
-              shadowColor: theme.accent,
+              shadowColor: theme.secondary,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
