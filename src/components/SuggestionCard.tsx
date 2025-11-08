@@ -54,11 +54,11 @@ export default function SuggestionCard({ title, body, rationale, onUse, index }:
       <TouchableOpacity 
         onPress={onUse} 
         style={{ 
-          backgroundColor: theme.accent, 
+          backgroundColor: theme.secondary, 
           padding: 14, 
           borderRadius: 12, 
           alignSelf: 'stretch',
-          shadowColor: theme.accent,
+          shadowColor: theme.secondary,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.3,
           shadowRadius: 4,

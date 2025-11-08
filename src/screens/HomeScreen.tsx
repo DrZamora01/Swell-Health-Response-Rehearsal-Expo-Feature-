@@ -181,11 +181,11 @@ export default function HomeScreen({ navigation }: any){
           <TouchableOpacity 
             onPress={() => navigation.navigate('DailyRep')} 
             style={{ 
-              backgroundColor: theme.accent, 
+              backgroundColor: theme.secondary, 
               padding: 16, 
               borderRadius: 12,
               marginTop: 8,
-              shadowColor: theme.accent,
+              shadowColor: theme.secondary,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,

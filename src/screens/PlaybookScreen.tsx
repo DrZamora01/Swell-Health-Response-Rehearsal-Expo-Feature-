@@ -165,7 +165,7 @@ export default function PlaybookScreen({ navigation }: any){
           <TouchableOpacity 
             onPress={() => navigation.navigate('Coach', { screen: 'DailyRep' })}
             style={{ 
-              backgroundColor: theme.accent,
+              backgroundColor: theme.secondary,
               paddingVertical: 12,
               paddingHorizontal: 24,
               borderRadius: 12,
