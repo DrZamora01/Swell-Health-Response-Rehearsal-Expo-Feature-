@@ -14,21 +14,36 @@ export type PlaybookItem = {
 };
 
 export async function savePlaybook(item: PlaybookItem) {
-  const raw = (await AsyncStorage.getItem(KEY_PLAYBOOK)) || '[]';
-  const arr = JSON.parse(raw) as PlaybookItem[];
-  arr.unshift(item);
-  await AsyncStorage.setItem(KEY_PLAYBOOK, JSON.stringify(arr.slice(0, 200)));
+  try {
+    const raw = (await AsyncStorage.getItem(KEY_PLAYBOOK)) || '[]';
+    const arr = JSON.parse(raw) as PlaybookItem[];
+    arr.unshift(item);
+    await AsyncStorage.setItem(KEY_PLAYBOOK, JSON.stringify(arr.slice(0, 200)));
+  } catch (error) {
+    console.error('Error saving playbook:', error);
+    throw error;
+  }
 }
 
 export async function loadPlaybook(): Promise<PlaybookItem[]> {
-  const raw = (await AsyncStorage.getItem(KEY_PLAYBOOK)) || '[]';
-  return JSON.parse(raw);
+  try {
+    const raw = (await AsyncStorage.getItem(KEY_PLAYBOOK)) || '[]';
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error('Error loading playbook:', error);
+    return [];
+  }
 }
 
 export async function getStreak(): Promise<{count:number; last:number|null}> {
-  const s = (await AsyncStorage.getItem(KEY_STREAK)) || '0';
-  const l = (await AsyncStorage.getItem(KEY_LAST_REP)) || '0';
-  return { count: Number(s), last: Number(l) || null };
+  try {
+    const s = (await AsyncStorage.getItem(KEY_STREAK)) || '0';
+    const l = (await AsyncStorage.getItem(KEY_LAST_REP)) || '0';
+    return { count: Number(s) || 0, last: Number(l) || null };
+  } catch (error) {
+    console.error('Error getting streak:', error);
+    return { count: 0, last: null };
+  }
 }
 
 export async function bumpStreak() {
@@ -48,7 +63,12 @@ export async function bumpStreak() {
 export type Prefs = { tone: 'neutral'|'warm'|'direct'; focusSkill?: string };
 export async function savePrefs(p: Prefs) { await AsyncStorage.setItem(KEY_PREFS, JSON.stringify(p)); }
 export async function loadPrefs(): Promise<Prefs> {
-  const raw = await AsyncStorage.getItem(KEY_PREFS);
-  return raw ? JSON.parse(raw) : { tone: 'neutral' };
+  try {
+    const raw = await AsyncStorage.getItem(KEY_PREFS);
+    return raw ? JSON.parse(raw) : { tone: 'neutral' };
+  } catch (error) {
+    console.error('Error loading prefs:', error);
+    return { tone: 'neutral' };
+  }
 }
 

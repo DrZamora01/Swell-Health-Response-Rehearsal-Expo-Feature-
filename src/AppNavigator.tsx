@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -63,8 +64,8 @@ export default function AppNavigator(){
           component={CoachStack}
           options={{
             tabBarLabel: 'Coach',
-            tabBarIcon: ({ color, size }) => (
-              <Text style={{ fontSize: size, color }}>💬</Text>
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 24 }}>💬</Text>
             )
           }}
         />
@@ -73,8 +74,8 @@ export default function AppNavigator(){
           component={PlaybookScreen}
           options={{
             tabBarLabel: 'Playbook',
-            tabBarIcon: ({ color, size }) => (
-              <Text style={{ fontSize: size, color }}>📚</Text>
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 24 }}>📚</Text>
             )
           }}
         />
@@ -83,8 +84,8 @@ export default function AppNavigator(){
           component={SettingsScreen}
           options={{
             tabBarLabel: 'Settings',
-            tabBarIcon: ({ color, size }) => (
-              <Text style={{ fontSize: size, color }}>⚙️</Text>
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 24 }}>⚙️</Text>
             )
           }}
         />
