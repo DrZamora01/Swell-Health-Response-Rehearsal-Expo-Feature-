@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Animated, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Animated, ActivityIndicator, InteractionManager } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Swipeable } from 'react-native-gesture-handler';
 import Header from '../components/Header';
@@ -69,29 +69,54 @@ export default function PlaybookScreen({ navigation }: any){
       console.log('Item ID:', item.id);
       console.log('Item:', JSON.stringify(item, null, 2));
       
+      // Optimistic update: immediately remove from UI for instant feedback
+      setItems(prevItems => {
+        const filtered = prevItems.filter(i => i.id !== item.id);
+        console.log(`Optimistic update: ${prevItems.length} -> ${filtered.length} items`);
+        return filtered;
+      });
+      
       // Delete from storage
       await deletePlaybookItem(item.id);
       console.log('✓ Item deleted from storage');
       
-      // Immediately update state by filtering out the deleted item
-      setItems(prevItems => {
-        const filtered = prevItems.filter(i => i.id !== item.id);
-        console.log(`State updated: ${prevItems.length} -> ${filtered.length} items`);
-        return filtered;
+      // Clear loading state immediately since optimistic update provides instant feedback
+      setDeletingId(null);
+      
+      // Reload from storage after interactions complete to allow optimistic update to render
+      // This ensures consistency while maintaining the immediate UI feedback
+      // Using InteractionManager ensures the optimistic update renders before reload
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          const updated = await loadPlaybook();
+          console.log('Reloaded from storage:', updated.length, 'items');
+          // Only update if the count differs (shouldn't happen, but ensures consistency)
+          setItems(prevItems => {
+            if (prevItems.length !== updated.length) {
+              console.log('Count mismatch detected, syncing with storage');
+              return updated;
+            }
+            // Verify the deleted item is actually gone (extra safety check)
+            const deletedItemStillExists = updated.some(i => i.id === item.id);
+            if (deletedItemStillExists) {
+              console.warn('Deleted item still exists in storage, syncing');
+              return updated;
+            }
+            // Optimistic update was correct, keep it
+            return prevItems;
+          });
+        } catch (reloadError) {
+          console.error('Error reloading after delete:', reloadError);
+          // Don't show error to user, optimistic update already handled it
+        }
       });
       
-      // Also reload from storage to ensure consistency
-      const updated = await loadPlaybook();
-      console.log('Reloaded from storage:', updated.length, 'items');
-      setItems(updated);
-      
-      setDeletingId(null);
       console.log('=== DELETE COMPLETE ===');
     } catch (error: any) {
       console.error('=== DELETE ERROR ===', error);
       setDeletingId(null);
       
-      // Try to reload anyway
+      // On error, revert optimistic update by reloading from storage
       const updated = await loadPlaybook();
       setItems(updated);
       
@@ -99,7 +124,7 @@ export default function PlaybookScreen({ navigation }: any){
     }
   };
 
-  const renderRightActions = (item: PlaybookItem, dragX: Animated.AnimatedInterpolation) => {
+  const renderRightActions = (item: PlaybookItem, dragX: Animated.AnimatedInterpolation<number>) => {
     const scale = dragX.interpolate({
       inputRange: [-100, 0],
       outputRange: [1, 0],
