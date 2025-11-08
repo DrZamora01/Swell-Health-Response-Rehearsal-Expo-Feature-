@@ -72,3 +72,27 @@ export async function loadPrefs(): Promise<Prefs> {
   }
 }
 
+export async function getLastPlaybookItem(): Promise<PlaybookItem | null> {
+  try {
+    const items = await loadPlaybook();
+    return items.length > 0 ? items[0] : null;
+  } catch (error) {
+    console.error('Error getting last playbook item:', error);
+    return null;
+  }
+}
+
+export async function getSkillStats(): Promise<Record<string, number>> {
+  try {
+    const items = await loadPlaybook();
+    const stats: Record<string, number> = {};
+    items.forEach(item => {
+      stats[item.skill] = (stats[item.skill] || 0) + 1;
+    });
+    return stats;
+  } catch (error) {
+    console.error('Error getting skill stats:', error);
+    return {};
+  }
+}
+

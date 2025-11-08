@@ -2,28 +2,40 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import { theme } from '../theme';
-import { useEffect, useState } from 'react';
-import { getStreak, loadPlaybook } from '../storage';
+import { useState, useCallback } from 'react';
+import { getStreak, loadPlaybook, getLastPlaybookItem, getSkillStats } from '../storage';
+import { SKILLS } from '../data/skills';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function HomeScreen({ navigation }: any){
   const [streak, setStreak] = useState(0);
   const [playbookCount, setPlaybookCount] = useState(0);
+  const [lastItem, setLastItem] = useState<any>(null);
+  const [skillStats, setSkillStats] = useState<Record<string, number>>({});
   
-  useEffect(() => { 
-    const load = async () => {
-      try {
-        const streakData = await getStreak();
-        setStreak(streakData.count);
-        const playbook = await loadPlaybook();
-        setPlaybookCount(playbook.length);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        setStreak(0);
-        setPlaybookCount(0);
-      }
-    };
-    load();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const load = async () => {
+        try {
+          const streakData = await getStreak();
+          setStreak(streakData.count);
+          const playbook = await loadPlaybook();
+          setPlaybookCount(playbook.length);
+          const last = await getLastPlaybookItem();
+          setLastItem(last);
+          const stats = await getSkillStats();
+          setSkillStats(stats);
+        } catch (error) {
+          console.error('Error loading data:', error);
+          setStreak(0);
+          setPlaybookCount(0);
+          setLastItem(null);
+          setSkillStats({});
+        }
+      };
+      load();
+    }, [])
+  );
 
   const getStreakMessage = () => {
     if (streak === 0) return "Start your streak today! 💪";
@@ -66,6 +78,90 @@ export default function HomeScreen({ navigation }: any){
             </View>
           </View>
         </Card>
+
+        {/* Last Win / Recent Activity */}
+        {lastItem && (
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ fontSize: 24, marginRight: 8 }}>✨</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
+                  Your Last Win
+                </Text>
+                <Text style={{ color: theme.subtext, fontSize: 12 }}>
+                  {SKILLS.find(s => s.key === lastItem.skill)?.name || lastItem.skill}
+                </Text>
+              </View>
+            </View>
+            <View style={{ 
+              backgroundColor: theme.surface, 
+              borderRadius: 8, 
+              padding: 12, 
+              marginTop: 8 
+            }}>
+              <Text style={{ color: theme.text, fontSize: 14, lineHeight: 20, fontStyle: 'italic' }}>
+                "{lastItem.rewrite.substring(0, 100)}{lastItem.rewrite.length > 100 ? '...' : ''}"
+              </Text>
+            </View>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('Playbook')}
+              style={{ marginTop: 8 }}
+            >
+              <Text style={{ color: theme.accent, fontSize: 12, fontWeight: '600' }}>
+                View in Playbook →
+              </Text>
+            </TouchableOpacity>
+          </Card>
+        )}
+
+        {/* Skill Progress */}
+        {Object.keys(skillStats).length > 0 && (
+          <Card>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700', marginBottom: 12 }}>
+              Your Practice
+            </Text>
+            <View style={{ gap: 8 }}>
+              {SKILLS.map(skill => {
+                const count = skillStats[skill.key] || 0;
+                const total = Object.values(skillStats).reduce((a, b) => a + b, 0);
+                const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                
+                if (count === 0) return null;
+                
+                return (
+                  <View key={skill.key} style={{ marginBottom: 8 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <Text style={{ fontSize: 16, marginRight: 6 }}>
+                          {skill.key === 'i_statement' ? '💭' : skill.key === 'boundary' ? '🛡️' : '🤔'}
+                        </Text>
+                        <Text style={{ color: theme.text, fontSize: 13, fontWeight: '600' }}>
+                          {skill.name}
+                        </Text>
+                      </View>
+                      <Text style={{ color: theme.subtext, fontSize: 12 }}>
+                        {count} time{count !== 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                    <View style={{ 
+                      height: 4, 
+                      backgroundColor: theme.surface, 
+                      borderRadius: 2,
+                      overflow: 'hidden'
+                    }}>
+                      <View style={{ 
+                        height: '100%', 
+                        width: `${percentage}%`, 
+                        backgroundColor: theme.accent,
+                        borderRadius: 2
+                      }} />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </Card>
+        )}
 
         {/* Daily Rep Card */}
         <Card>
