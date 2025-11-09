@@ -28,6 +28,8 @@ npx create-expo-app -y  # if you want, but this repo is ready
 # clone this repo
 npm install
 npm run start
+npx expo start --web
+
 ```
 
 Press `i` for iOS Simulator or `a` for Android Emulator.
